@@ -11,6 +11,7 @@ import java.util.Random;
 
 public class WorkerBehavior extends AbstractBehavior<WorkerBehavior.Command> {
 
+
     public static class Command implements Serializable {
         private static final long serialVersionUID = 1L;
         private String message;
@@ -38,28 +39,38 @@ public class WorkerBehavior extends AbstractBehavior<WorkerBehavior.Command> {
         return Behaviors.setup(WorkerBehavior::new);
     }
 
-    private BigInteger prime;
 
     @Override
     public Receive<Command> createReceive() {
+        return handleMessagesWhenWeDontYetHaveAPrimeNumber();
+    }
+
+    public Receive<Command> handleMessagesWhenWeDontYetHaveAPrimeNumber() {
         return newReceiveBuilder()
                 .onAnyMessage(command -> {
-                    if (command.getMessage().equals("start")) {
-                        if(prime==null){
-                            BigInteger bigInteger = new BigInteger(2000, new Random());
-                            prime=bigInteger.nextProbablePrime();
-                        }
-                        command.getSender().tell(new ManagerBehavior.ResultCommand(prime) {
-                        });
+
+                    BigInteger bigInteger = new BigInteger(2000, new Random());
+                    BigInteger prime = bigInteger.nextProbablePrime();
+                    command.getSender().tell(new ManagerBehavior.ResultCommand(prime) {
+                    });
 //                        System.out.println(getContext().getSelf().path().toString() + "\n" + bigInteger.nextProbablePrime());
-                    }
-                    return this;
+                    return handleMessagesWhenWeAlreadyhaveAPrimeNumber(prime);
                 })
 //                .onMessageEquals("start", () -> {
 //                    BigInteger bigInteger = new BigInteger(2000, new Random());
 //                    System.out.println(getContext().getSelf().path().toString() + "\n" + bigInteger.nextProbablePrime());
 //                    return this;
 //                })
+                .build();
+    }
+
+    public Receive<Command> handleMessagesWhenWeAlreadyhaveAPrimeNumber(BigInteger prime) {
+        return newReceiveBuilder()
+                .onAnyMessage(command -> {
+                        command.getSender().tell(new ManagerBehavior.ResultCommand(prime) {
+                        });
+                    return this;
+                })
                 .build();
     }
 }
