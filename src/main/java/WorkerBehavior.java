@@ -55,9 +55,6 @@ public class WorkerBehavior extends AbstractBehavior<WorkerBehavior.Command> {
                     if (r.nextInt(5) < 2) {
                         command.getSender().tell(new ManagerBehavior.ResultCommand(prime));
                     }
-
-
-//                        System.out.println(getContext().getSelf().path().toString() + "\n" + bigInteger.nextProbablePrime());
                     return handleMessagesWhenWeAlreadyhaveAPrimeNumber(prime);
                 })
 
@@ -67,8 +64,10 @@ public class WorkerBehavior extends AbstractBehavior<WorkerBehavior.Command> {
     public Receive<Command> handleMessagesWhenWeAlreadyhaveAPrimeNumber(BigInteger prime) {
         return newReceiveBuilder()
                 .onAnyMessage(command -> {
-                        command.getSender().tell(new ManagerBehavior.ResultCommand(prime) {
-                        });
+                    Random r = new Random();
+                    if (r.nextInt(5) < 2) {
+                        command.getSender().tell(new ManagerBehavior.ResultCommand(prime));
+                    }
                     return this;
                 })
                 .build();
