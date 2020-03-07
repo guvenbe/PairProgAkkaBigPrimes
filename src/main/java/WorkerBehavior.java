@@ -51,16 +51,16 @@ public class WorkerBehavior extends AbstractBehavior<WorkerBehavior.Command> {
 
                     BigInteger bigInteger = new BigInteger(2000, new Random());
                     BigInteger prime = bigInteger.nextProbablePrime();
-                    command.getSender().tell(new ManagerBehavior.ResultCommand(prime) {
-                    });
+                    Random r = new Random();
+                    if (r.nextInt(5) < 2) {
+                        command.getSender().tell(new ManagerBehavior.ResultCommand(prime));
+                    }
+
+
 //                        System.out.println(getContext().getSelf().path().toString() + "\n" + bigInteger.nextProbablePrime());
                     return handleMessagesWhenWeAlreadyhaveAPrimeNumber(prime);
                 })
-//                .onMessageEquals("start", () -> {
-//                    BigInteger bigInteger = new BigInteger(2000, new Random());
-//                    System.out.println(getContext().getSelf().path().toString() + "\n" + bigInteger.nextProbablePrime());
-//                    return this;
-//                })
+
                 .build();
     }
 
