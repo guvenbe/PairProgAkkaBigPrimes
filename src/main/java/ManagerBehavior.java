@@ -12,26 +12,33 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 /*
-* Using the ask pattern
-*/
+ * Using the ask pattern
+ */
 
 public class ManagerBehavior extends AbstractBehavior<ManagerBehavior.Command> {
-    public interface Command extends Serializable{}
+    public interface Command extends Serializable {
+    }
 
-    public static class InstructionCommand implements  Command{
+    public static class InstructionCommand implements Command {
         public static final long serialVersionUID = 1L;
         private String message;
+        private ActorRef<SortedSet<BigInteger>> sender;
 
-        public InstructionCommand(String message) {
+        public InstructionCommand(String message, ActorRef<SortedSet<BigInteger>> sender) {
             this.message = message;
+            this.sender = sender;
         }
 
         public String getMessage() {
             return message;
         }
+
+        public ActorRef<SortedSet<BigInteger>> getSender() {
+            return sender;
+        }
     }
 
-    public static class ResultCommand implements Command{
+    public static class ResultCommand implements Command {
         public static final long serialVersionUID = 1L;
         private BigInteger prime;
 
@@ -45,7 +52,7 @@ public class ManagerBehavior extends AbstractBehavior<ManagerBehavior.Command> {
     }
 
     //This is called within the class
-    private class NoResponseReceivedCommand implements Command{
+    private class NoResponseReceivedCommand implements Command {
         public static final long serialVersionUID = 1L;
         ActorRef<WorkerBehavior.Command> worker;
 
@@ -62,29 +69,33 @@ public class ManagerBehavior extends AbstractBehavior<ManagerBehavior.Command> {
         super(context);
     }
 
-    public static Behavior<Command> create(){
+    public static Behavior<Command> create() {
         return Behaviors.setup(ManagerBehavior::new);
     }
 
     private SortedSet<BigInteger> primes = new TreeSet<>();
 
+    private ActorRef<SortedSet<BigInteger>> sender;
+
     @Override
     public Receive<Command> createReceive() {
         return newReceiveBuilder()
-                .onMessage(InstructionCommand.class, command ->{
-                    if(command.getMessage().equals("start")){
-                        for(int workerCount=0; workerCount<20; workerCount++){
-                            ActorRef<WorkerBehavior.Command> worker = getContext().spawn(WorkerBehavior.create(),"worker" +workerCount);
+                .onMessage(InstructionCommand.class, command -> {
+                    this.sender=command.getSender();
+                    if (command.getMessage().equals("start")) {
+                        for (int workerCount = 0; workerCount < 20; workerCount++) {
+                            ActorRef<WorkerBehavior.Command> worker = getContext().spawn(WorkerBehavior.create(), "worker" + workerCount);
                             askWorkerForAPrime(worker);
                         }
                     }
                     return Behaviors.same();
                 })
-                .onMessage(ResultCommand.class, command ->{
+                .onMessage(ResultCommand.class, command -> {
                     primes.add(command.getPrime());
                     System.out.println("I have received " + primes.size() + " primes numbers");
-                    if(primes.size()==20){
-                        primes.forEach(System.out::println);
+                    //Send the list of primes to the main method
+                    if(primes.size() == 20){
+                        this.sender.tell(primes);
                     }
                     return Behaviors.same();
                 })
@@ -96,15 +107,15 @@ public class ManagerBehavior extends AbstractBehavior<ManagerBehavior.Command> {
                 .build();
     }
 
-    private void askWorkerForAPrime(ActorRef<WorkerBehavior.Command> worker){
+    private void askWorkerForAPrime(ActorRef<WorkerBehavior.Command> worker) {
         getContext().ask(Command.class, worker, Duration.ofSeconds(5),
                 //(me)->new WorkerBehavior.Command("start", getContext().getSelf()),
-                (me)->new WorkerBehavior.Command("start", me),
+                (me) -> new WorkerBehavior.Command("start", me),
                 (response, throwable) -> {
-                    if(response != null){
+                    if (response != null) {
                         return response;
                     } else {
-                        System.out.println("Worker " + worker.path()+ " faile to respond");
+                        System.out.println("Worker " + worker.path() + " faile to respond");
                         return new NoResponseReceivedCommand(worker);
                     }
                 });
