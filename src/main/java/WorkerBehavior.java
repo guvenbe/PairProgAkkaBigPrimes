@@ -51,8 +51,7 @@ public class WorkerBehavior extends AbstractBehavior<WorkerBehavior.Command> {
 
                     BigInteger bigInteger = new BigInteger(2000, new Random());
                     BigInteger prime = bigInteger.nextProbablePrime();
-                    command.getSender().tell(new ManagerBehavior.ResultCommand(prime) {
-                    });
+                    command.getSender().tell(new ManagerBehavior.ResultCommand(prime));
 //                        System.out.println(getContext().getSelf().path().toString() + "\n" + bigInteger.nextProbablePrime());
                     return handleMessagesWhenWeAlreadyhaveAPrimeNumber(prime);
                 })
